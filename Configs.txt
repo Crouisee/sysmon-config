@@ -40,6 +40,21 @@ The following tuning was applied to lower system load from registry monitoring:
 
 ### DNS Query changes
 added some environment specific exclusions
+
+### Event 7 (ImageLoad) Tuning Brief - Applied to Both Configs
+Added targeted Sysmon Event ID 7 monitoring to support specific Splunk detections without enabling broad DLL load logging.
+
+**Included (high-signal only):**
+- Office processes loading `VBE7INTL.DLL`, `VBE7.DLL`, `VBEUI.DLL`, or `taskschd.dll`
+- `taskschd.dll` loaded by binaries executing from suspicious/writable locations (Temp, Public, Fonts, Debug, Recycle Bin, etc.)
+- `msi.dll` loads (for non-system module load hunting)
+- BRC4-related DLL loads: `credui.dll`, `dbghelp.dll`, `samcli.dll`, `winhttp.dll`
+
+**Excluded (noise reduction):**
+- `msi.dll` when the loading process path is under `C:\Windows\*`
+
+**Result:**
+- Preserves data required by the referenced Splunk EventCode=7 analytics while keeping endpoint/server load lower than full ImageLoad collection.
 ---
 
 - servers
