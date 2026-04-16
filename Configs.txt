@@ -1,0 +1,51 @@
+# Sysmon Configuration Overview
+
+## Purpose & Design Rationale
+
+This configuration maintains separate Sysmon monitoring profiles for **servers** and **endpoints** to optimize threat detection while managing log volume and system performance:
+
+### Servers Configuration
+- **Focus:** Network-based attacks, C2 communications, and persistence via scheduled tasks/registry
+- **Key Monitors:** DNS queries (Event 22) catch command-and-control beaconing; Registry monitoring detects configuration changes; Limited file monitoring (startup folders only) to reduce noise while catching persistence
+- **Trade-off:** Reduced file creation logging in favor of DNS visibility for lateral movement and exfiltration detection
+
+### Endpoints Configuration  
+- **Focus:** Malware execution, code injection, and file-based persistence (downloads, temp folders)
+- **Key Monitors:** Comprehensive file creation monitoring (Event 11) catches dropped malware and suspicious executables; No DNS monitoring reduces noise on user-facing systems where DNS activity is high
+- **Trade-off:** More aggressive file monitoring, less focus on network C2 (handled by network appliances)
+
+### Key Differences Explained
+| Event | Servers | Endpoints | Rationale |
+|-------|---------|-----------|-----------|
+| Event 11 (File Create) | Startup folders only | Full monitoring | Endpoints download/execute more files; servers rely on admin-managed configurations |
+| Event 22 (DNS Query) | Monitored | Not monitored | Server C2 is critical detection vector; endpoint DNS is noisy/handled elsewhere |
+| Event 4 | Not monitored | Monitored | Lower priority for servers; more useful for endpoint troubleshooting |
+
+---
+
+- servers
+  - Event ID 1: Process Creation
+  - Event ID 3: Network Connection Initiated
+  - Event ID 6: Driver Loaded Into Kernel
+  - Event ID 8: Remote Thread Created
+  - Event ID 10: Inter-Process Access
+  - Event ID 11: File Created (startup folders only)
+  - Event ID 12 & 13 & 14: Registry Modification
+  - Event ID 19 & 20 & 21: WMI Event Monitoring
+  - Event ID 22: DNS Query
+  - Event ID 255: Error
+  - Event ID 29: File Exe Detected
+
+
+- endpoints
+  - Event ID 1: Process Creation
+  - Event ID 3: Network Connection Initiated
+  - Event ID 4: Reserved for Sysmon Service Status Messages
+  - Event ID 6: Driver Loaded Into Kernel
+  - Event ID 8: Remote Thread Created
+  - Event ID 10: Inter-Process Access
+  - Event ID 11: File Created
+  - Event ID 12 & 13 & 14: Registry Modification
+  - Event ID 19 & 20 & 21: WMI Event Monitoring
+  - Event ID 255: Error
+  - Event ID 29: File Exe Detected
