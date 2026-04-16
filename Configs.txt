@@ -21,29 +21,62 @@ This configuration maintains separate Sysmon monitoring profiles for **servers**
 | Event 22 (DNS Query) | Monitored | Not monitored | Server C2 is critical detection vector; endpoint DNS is noisy/handled elsewhere |
 | Event 4 | Not monitored | Monitored | Lower priority for servers; more useful for endpoint troubleshooting |
 
+### Registry Load Reduction (Event 12/13/14) - Applied to Both Configs
+The following tuning was applied to lower system load from registry monitoring:
+
+**Removed from include rules (high-volume, low detection value):**
+- AMCache/InvDB inventory writes (LowerCaseLongPath, Publisher, BinProductVersion, DriverVersion, LinkDate, etc.) — fire on every software execution, minimal attacker coverage
+- `HKLM\SYSTEM\CurrentControlSet\Services\` broad wildcard — already fully covered by targeted ServiceDll, ImagePath, and Start rules
+- `HKLM\SYSTEM\CurrentControlSet\Enum\Root\LEGACY_` — tagged "unknown log volume" in original config; retained as a re-add candidate after EPS baselining
+
+**Added to exclude rules (trusted high-frequency writers):**
+- `TrustedInstaller.exe` — modifies hundreds of keys during Windows patching cycles
+- Google/Edge browser updater processes — routine self-update registry churn
+- `HKLM\...\FontCache` — routine rendering writes, no attack surface
+- Microsoft Monitoring Agent / Splunk agents — known-good management writers
+- `HKLM\...\Installer\UserData\` — MSI install/repair cache (broader than existing SYSTEM-only exclude)
+
+**Detection coverage preserved:** All persistence, credential, UAC, Defender tamper, IFEO, COM hijacking, RDP, Winsock, AppCompat shim, HVCI, and trust architecture rules remain intact.
+
+### DNS Query changes
+added some environment specific exclusions
 ---
 
 - servers
   - Event ID 1: Process Creation
   - Event ID 3: Network Connection Initiated
+  - Event ID 5: Process Terminated
   - Event ID 6: Driver Loaded Into Kernel
+  - Event ID 7: Image Loaded (targeted DLL monitoring for Splunk detections)
   - Event ID 8: Remote Thread Created
+  - Event ID 9: RawAccessRead
   - Event ID 10: Inter-Process Access
   - Event ID 11: File Created (startup folders only)
   - Event ID 12 & 13 & 14: Registry Modification
+  - Event ID 17 & 18: Pipe Created / Connected
+  - Event ID 20 & 21: WMI Event Monitoring
   - Event ID 22: DNS Query
-  - Event ID 255: Error
+  - Event ID 23: File Delete Archived
+  - Event ID 26: File Delete Detected
   - Event ID 29: File Exe Detected
+  - Event ID 255: Error
 
 
 - endpoints
   - Event ID 1: Process Creation
   - Event ID 3: Network Connection Initiated
   - Event ID 4: Reserved for Sysmon Service Status Messages
+  - Event ID 5: Process Terminated
   - Event ID 6: Driver Loaded Into Kernel
+  - Event ID 7: Image Loaded (targeted DLL monitoring for Splunk detections)
   - Event ID 8: Remote Thread Created
+  - Event ID 9: RawAccessRead
   - Event ID 10: Inter-Process Access
   - Event ID 11: File Created
   - Event ID 12 & 13 & 14: Registry Modification
-  - Event ID 255: Error
+  - Event ID 15: File Stream Created (ADS)
+  - Event ID 17 & 18: Pipe Created / Connected
+  - Event ID 23: File Delete Archived
+  - Event ID 26: File Delete Detected
   - Event ID 29: File Exe Detected
+  - Event ID 255: Error
