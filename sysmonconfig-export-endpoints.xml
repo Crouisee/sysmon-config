@@ -394,6 +394,16 @@
 		<!--DATA: UtcTime, State, Version, SchemaVersion-->
 		<!--Cannot be filtered.-->
 
+	<!--SYSMON EVENT ID 5 : PROCESS TERMINATED [ProcessTerminate]-->
+		<!--EVENT 5: "Process terminated"-->
+		<!--COMMENT:	Low volume. Useful for process lifetime correlation and detecting short-lived malicious processes that self-delete.-->
+		<!--DATA: UtcTime, ProcessGuid, ProcessId, Image-->
+	<RuleGroup name="" groupRelation="or">
+		<ProcessTerminate onmatch="exclude">
+			<!--NOTE: Using exclude with no rules means everything will be logged-->
+		</ProcessTerminate>
+	</RuleGroup>
+
 	<!--SYSMON EVENT ID 6 : DRIVER LOADED INTO KERNEL [DriverLoad]-->
 		<!--COMMENT:	Because drivers with bugs can be used to escalate to kernel permissions, be extremely selective
 			about what you exclude from monitoring. Low event volume, little incentive to exclude.
@@ -407,6 +417,65 @@
 			<!-- include if needed <Signature condition="contains">windows</Signature> Exclude signed Microsoft drivers-->
 			<!-- include if needed <Signature condition="begin with">Intel </Signature> Exclude signed Intel drivers-->
 		</DriverLoad>
+	</RuleGroup>
+
+	<!--SYSMON EVENT ID 7 : IMAGE LOADED [ImageLoad]-->
+		<!--EVENT 7: "Image loaded"-->
+		<!--COMMENT:	Tuned for specific Splunk detections that rely on EventCode=7 while keeping event volume low. -->
+		<!--DATA: UtcTime, ProcessGuid, ProcessId, Image, ImageLoaded, FileVersion, Description, Product, Company, OriginalFileName, Hashes, Signed, Signature, SignatureStatus, User-->
+	<RuleGroup name="" groupRelation="or">
+		<ImageLoad onmatch="include">
+			<!-- Office products loading VBA/task scheduler DLLs -->
+			<Rule groupRelation="and">
+				<ImageLoaded condition="contains any">\VBE7INTL.DLL;\VBE7.DLL;\VBEUI.DLL;\taskschd.dll</ImageLoaded>
+				<Image condition="image">EQNEDT32.exe</Image>
+				<Image condition="image">excel.exe</Image>
+				<Image condition="image">Graph.exe</Image>
+				<Image condition="image">msaccess.exe</Image>
+				<Image condition="image">mspub.exe</Image>
+				<Image condition="image">onenote.exe</Image>
+				<Image condition="image">onenoteim.exe</Image>
+				<Image condition="image">onenotem.exe</Image>
+				<Image condition="image">outlook.exe</Image>
+				<Image condition="image">powerpnt.exe</Image>
+				<Image condition="image">visio.exe</Image>
+				<Image condition="image">winproj.exe</Image>
+				<Image condition="image">winword.exe</Image>
+			</Rule>
+
+			<!-- taskschd.dll loaded by binaries in writable/suspicious paths -->
+			<Rule groupRelation="and">
+				<ImageLoaded condition="end with">\taskschd.dll</ImageLoaded>
+				<Image condition="begin with">C:\Windows\Fonts\</Image>
+				<Image condition="begin with">C:\Windows\Temp\</Image>
+				<Image condition="begin with">C:\Users\Public\</Image>
+				<Image condition="begin with">C:\Windows\Debug\</Image>
+				<Image condition="begin with">C:\Users\Administrator\Music\</Image>
+				<Image condition="begin with">C:\Windows\servicing\</Image>
+				<Image condition="begin with">C:\Users\Default\</Image>
+				<Image condition="contains">\$Recycle.Bin\</Image>
+				<Image condition="begin with">C:\Windows\Media\</Image>
+				<Image condition="begin with">C:\Windows\repair\</Image>
+				<Image condition="contains">\temp\</Image>
+				<Image condition="begin with">C:\PerfLogs\</Image>
+			</Rule>
+
+			<!-- msi.dll module load hunting -->
+			<ImageLoaded condition="end with">\msi.dll</ImageLoaded>
+
+			<!-- Brute Ratel C4 module pattern -->
+			<ImageLoaded condition="contains any">\credui.dll;\dbghelp.dll;\samcli.dll;\winhttp.dll</ImageLoaded>
+		</ImageLoad>
+	</RuleGroup>
+
+	<RuleGroup name="" groupRelation="or">
+		<ImageLoad onmatch="exclude">
+			<!-- Reduce msi.dll noise from expected system paths; detection logic is focused on non-system binaries -->
+			<Rule groupRelation="and">
+				<ImageLoaded condition="end with">\msi.dll</ImageLoaded>
+				<Image condition="begin with">C:\Windows\</Image>
+			</Rule>
+		</ImageLoad>
 	</RuleGroup>
 
 	<!--SYSMON EVENT ID 8 : REMOTE THREAD CREATED [CreateRemoteThread]-->
@@ -427,6 +496,24 @@
 			<StartModule condition="is">C:\Windows\system32\kernel32.dll</StartModule>
 			<TargetImage condition="is">C:\Program Files (x86)\Google\Chrome\Application\chrome.exe</TargetImage>
 		</CreateRemoteThread>
+	</RuleGroup>
+
+	<!--SYSMON EVENT ID 9 : RAWACCESS READ [RawAccessRead]-->
+		<!--EVENT 9: "RawAccessRead detected"-->
+		<!--COMMENT:	Detects direct disk reads bypassing the filesystem - used by credential dumpers reading NTDS.dit, SAM, or SYSTEM hives directly.-->
+		<!--DATA: UtcTime, ProcessGuid, ProcessId, Image, Device-->
+	<RuleGroup name="" groupRelation="or">
+		<RawAccessRead onmatch="include">
+			<Image condition="image">fgdump.exe</Image>
+			<Image condition="image">pwdump.exe</Image>
+			<Image condition="image">wce.exe</Image>
+			<Image condition="image">procdump.exe</Image>
+			<Image condition="image">procdump64.exe</Image>
+			<Image condition="image">mimikatz.exe</Image>
+			<Image condition="image">gsecdump.exe</Image>
+			<Image condition="image">cachedump.exe</Image>
+			<Image condition="image">ntdsutil.exe</Image>
+		</RawAccessRead>
 	</RuleGroup>
 
 	<!--SYSMON EVENT ID 10 : INTER-PROCESS ACCESS [ProcessAccess]-->
@@ -760,14 +847,7 @@
 			<TargetObject name="Context,ProcessAccessedPrivateResource" condition="begin with">HKLM\Software\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\</TargetObject> <!-- Windows: Win10 tracks when and what process uses webcam/microphone/location etc [ https://medium.com/@7a616368/can-you-track-processes-accessing-the-camera-and-microphone-7e6885b37072 ] -->
 			<TargetObject condition="contains">\Keyboard Layout\Preload</TargetObject> <!--Microsoft:Windows: Keyboard layout loaded into user session [ https://renenyffenegger.ch/notes/Windows/registry/tree/HKEY_CURRENT_USER/Keyboard-Layout/Preload/index ] | Credit @cyb3rops -->
 			<TargetObject condition="contains">\Keyboard Layout\Substitutes</TargetObject> <!--Microsoft:Windows: Keyboard layout loaded into user session [ https://renenyffenegger.ch/notes/Windows/registry/tree/HKEY_CURRENT_USER/Keyboard-Layout/Preload/index ] | Credit @cyb3rops -->
-			<!--Windows inventory events-->
-			<TargetObject name="InvDB-Path" condition="end with">\LowerCaseLongPath</TargetObject> <!-- [ https://binaryforay.blogspot.com/2017/10/amcache-still-rules-everything-around.html ] -->
-			<TargetObject name="InvDB-Pub" condition="end with">\Publisher</TargetObject> <!-- [ https://binaryforay.blogspot.com/2017/10/amcache-still-rules-everything-around.html ] -->
-			<TargetObject name="InvDB-Ver" condition="end with">\BinProductVersion</TargetObject> <!-- [ https://docs.microsoft.com/en-us/windows/privacy/basic-level-windows-diagnostic-events-and-fields-1709 ] -->
-			<TargetObject name="InvDB-DriverVer" condition="end with">\DriverVersion</TargetObject> <!-- [ https://df-stream.com/2015/02/leveraging-devicecontainers-key/ ] -->
-			<TargetObject name="InvDB-DriverVer" condition="end with">\DriverVerVersion</TargetObject> <!-- [ https://df-stream.com/2015/02/leveraging-devicecontainers-key/ ] -->
-			<TargetObject name="InvDB-CompileTimeClaim" condition="end with">\LinkDate</TargetObject> <!-- Compile time of EXE, may not be reliable [ https://en.wikipedia.org/wiki/Link_time ] -->
-			<TargetObject name="InvDB" condition="contains">Compatibility Assistant\Store\</TargetObject> <!-- Inventory -->
+			<!-- InvDB inventory events removed - AMCache writes are very high volume with low detection value -->
 			<TargetObject condition="begin with">HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Ports</TargetObject> <!--Microsoft:Windows: Printer port changes as used in CVE-2020-1048 [ https://windows-internals.com/printdemon-cve-2020-1048/ ] -->
 			<!--Suspicious sources-->
 			<Image name="Suspicious,ImageBeginWithBackslash" condition="end with">\regedit.exe</Image> <!--Users and helpdesk staff making system modifications -->
@@ -786,9 +866,8 @@
 			<TargetObject condition="contains">\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\RunMRU\</TargetObject>
 			<TargetObject condition="contains">\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\TypedPaths\</TargetObject>
 			<TargetObject condition="begin with">HKLM\SYSTEM\CurrentControlSet\services\DNS\Parameters\</TargetObject> <!--Microsoft:Windows:DNS: ServerLevelPluginDll Issue https://medium.com/@esnesenon/feature-not-bug-dnsadmin-to-dc-compromise-in-one-line-a0f779b8dc83 -->
-			<!-- Testing - Unknown log volume but relevant registry keys -->
-			<TargetObject condition="begin with">HKLM\SYSTEM\CurrentControlSet\Enum\Root\LEGACY_</TargetObject> <!-- Often used by malware -->
-			<TargetObject condition="begin with">HKLM\SYSTEM\CurrentControlSet\Services\</TargetObject> <!--Windows Services -->
+			<!-- Broad Services wildcard removed - ServiceDll, ImagePath, and Start are already covered by targeted rules above -->
+			<!-- LEGACY_ removed - tagged as unknown log volume; re-add if baseline testing shows acceptable EPS -->
 			<!--Windows:HVCI: Monitor HVCI being disabled via registry-->
 			<TargetObject name="Tamper-HVCI" condition="end with">\Control\DeviceGuard\HypervisorEnforcedCodeIntegrity</TargetObject>
 			<TargetObject name="Tamper-HVCI" condition="end with">\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity\Enabled</TargetObject>
@@ -865,14 +944,114 @@
 			<TargetObject condition="is">HKLM\Software\Microsoft\Windows\CurrentVersion\WINEVT\Publishers\{945a8954-c147-4acd-923f-40c45405a658}</TargetObject> <!--Windows update-->
 			<!-- Services Noise -->
 			<TargetObject condition="contains">\CurrentVersion\NetworkList\Profiles\</TargetObject>
+			<!-- SECTION: Load reduction - High-volume trusted writers -->
+			<!-- Windows Update / TrustedInstaller: modifies hundreds of keys during patching -->
+			<Image condition="is">C:\Windows\servicing\TrustedInstaller.exe</Image>
+			<!-- Browser updater processes: routine self-update registry churn -->
+			<Image condition="begin with">C:\Program Files\Google\Update\</Image>
+			<Image condition="begin with">C:\Program Files (x86)\Google\Update\</Image>
+			<Image condition="begin with">C:\Program Files (x86)\Microsoft\EdgeUpdate\</Image>
+			<!-- Windows Font Cache: routine rendering key writes -->
+			<TargetObject condition="begin with">HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\FontCache</TargetObject>
+			<!-- Management agents: known-good, high-frequency registry writers -->
+			<Image condition="begin with">C:\Program Files\Microsoft Monitoring Agent\</Image>
+			<Image condition="begin with">C:\Program Files\SplunkUniversalForwarder\bin\</Image>
+			<Image condition="begin with">C:\Program Files\Splunk\bin\</Image>
+			<!-- Windows Installer: routine MSI install/repair cache writes (SYSTEM-run installs already excluded above) -->
+			<TargetObject condition="begin with">HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\UserData\</TargetObject>
 		</RegistryEvent>
 	</RuleGroup>
 
-	<!--SYSMON EVENT ID 255 : ERROR-->
-		<!--"This event is generated when an error occurred within Sysmon. They can happen if the system is under heavy load
-			and certain tasked could not be performed or a bug exists in the Sysmon service. You can report any bugs on the
-			Sysinternals forum or over Twitter (@markrussinovich)."-->
-		<!--Cannot be filtered.-->
+	<!--SYSMON EVENT ID 15 : FILE STREAM CREATED [FileCreateStreamHash]-->
+		<!--EVENT 15: "File stream created"-->
+		<!--COMMENT:	Detects Alternate Data Stream (ADS) creation - used to hide payloads, bypass Mark of the Web, and conceal tooling. Endpoints only.-->
+		<!--DATA: UtcTime, ProcessGuid, ProcessId, Image, TargetFilename, CreationUtcTime, Hash-->
+	<RuleGroup name="" groupRelation="or">
+		<FileCreateStreamHash onmatch="include">
+			<!-- Zone.Identifier stream - track files downloaded from internet -->
+			<TargetFilename condition="contains">:Zone.Identifier</TargetFilename>
+			<!-- Executable and script extensions written to ADS -->
+			<TargetFilename condition="end with">.exe</TargetFilename>
+			<TargetFilename condition="end with">.dll</TargetFilename>
+			<TargetFilename condition="end with">.ps1</TargetFilename>
+			<TargetFilename condition="end with">.bat</TargetFilename>
+			<TargetFilename condition="end with">.vbs</TargetFilename>
+			<TargetFilename condition="end with">.hta</TargetFilename>
+		</FileCreateStreamHash>
+	</RuleGroup>
+
+	<!--SYSMON EVENT ID 17 &amp; 18 : PIPE CREATED / CONNECTED [PipeEvent]-->
+		<!--EVENT 17: "Pipe Created" | EVENT 18: "Pipe Connected"-->
+		<!--COMMENT:	Named pipe activity - key indicator for Cobalt Strike C2, lateral movement, and inter-process communication abuse.-->
+		<!--DATA: UtcTime, ProcessGuid, ProcessId, PipeName, Image-->
+	<RuleGroup name="" groupRelation="or">
+		<PipeEvent onmatch="include">
+			<!-- Cobalt Strike default and common custom named pipes -->
+			<PipeName condition="begin with">\msagent_</PipeName>
+			<PipeName condition="begin with">\mojo.</PipeName>
+			<PipeName condition="begin with">\postex_</PipeName>
+			<PipeName condition="begin with">\status_</PipeName>
+			<PipeName condition="begin with">\MSSE-</PipeName>
+			<PipeName condition="begin with">\spoolss_</PipeName>
+			<PipeName condition="begin with">\win_svc</PipeName>
+			<PipeName condition="begin with">\ntsvcs</PipeName>
+			<PipeName condition="begin with">\wkssvc</PipeName>
+			<PipeName condition="begin with">\scerpc_</PipeName>
+			<PipeName condition="contains">msrpc_</PipeName>
+			<!-- Metasploit default pipes -->
+			<PipeName condition="begin with">\isapi_</PipeName>
+			<!-- PowerShell remoting / Empire agent pipes -->
+			<PipeName condition="begin with">\PSHost</PipeName>
+		</PipeEvent>
+	</RuleGroup>
+
+	<!--SYSMON EVENT ID 23 : FILE DELETE ARCHIVED [FileDelete]-->
+		<!--EVENT 23: "File Delete archived"-->
+		<!--COMMENT:	Covers ransomware bulk deletion of backups/shadow copies, log clearing, and staged payload cleanup after execution.-->
+		<!--DATA: UtcTime, ProcessGuid, ProcessId, Image, User, TargetFilename, Hashes, IsExecutable-->
+	<RuleGroup name="" groupRelation="or">
+		<FileDelete onmatch="include">
+			<!-- Shadow copies and backup files - ransomware indicators -->
+			<TargetFilename condition="end with">.vhd</TargetFilename>
+			<TargetFilename condition="end with">.vhdx</TargetFilename>
+			<TargetFilename condition="end with">.avhd</TargetFilename>
+			<TargetFilename condition="end with">.avhdx</TargetFilename>
+			<TargetFilename condition="end with">.bak</TargetFilename>
+			<TargetFilename condition="end with">.wbcat</TargetFilename>
+			<TargetFilename condition="end with">.bkf</TargetFilename>
+			<!-- Event logs deleted - anti-forensic -->
+			<TargetFilename condition="end with">.evtx</TargetFilename>
+			<!-- Executables and scripts deleted after execution - staging cleanup -->
+			<TargetFilename condition="end with">.exe</TargetFilename>
+			<TargetFilename condition="end with">.ps1</TargetFilename>
+			<TargetFilename condition="end with">.bat</TargetFilename>
+			<TargetFilename condition="end with">.hta</TargetFilename>
+			<TargetFilename condition="end with">.vbs</TargetFilename>
+			<!-- Sysmon config file tamper -->
+			<TargetFilename condition="end with">sysmon.xml</TargetFilename>
+		</FileDelete>
+	</RuleGroup>
+
+	<!--SYSMON EVENT ID 26 : FILE DELETE DETECTED [FileDeleteDetected]-->
+		<!--EVENT 26: "File Delete detected"-->
+		<!--COMMENT:	Logs deletion attempts of security-relevant files (no archiving). Covers security tool removal and EDR evasion.-->
+		<!--DATA: UtcTime, ProcessGuid, ProcessId, Image, User, TargetFilename, Hashes, IsExecutable-->
+	<RuleGroup name="" groupRelation="or">
+		<FileDeleteDetected onmatch="include">
+			<!-- Security tool directories -->
+			<TargetFilename condition="begin with">C:\Program Files\Windows Defender\</TargetFilename>
+			<TargetFilename condition="begin with">C:\Program Files\Microsoft Monitoring Agent\</TargetFilename>
+			<TargetFilename condition="begin with">C:\Program Files\SplunkUniversalForwarder\</TargetFilename>
+			<TargetFilename condition="begin with">C:\Program Files\Splunk\</TargetFilename>
+			<!-- Windows event log store -->
+			<TargetFilename condition="begin with">C:\Windows\System32\winevt\Logs\</TargetFilename>
+			<!-- Executables deleted from common staging paths -->
+			<TargetFilename condition="begin with">C:\Users\Public\</TargetFilename>
+			<TargetFilename condition="begin with">C:\Windows\Temp\</TargetFilename>
+			<TargetFilename condition="begin with">C:\ProgramData\</TargetFilename>
+		</FileDeleteDetected>
+	</RuleGroup>
+
 	<!--SYSMON EVENT ID 29 : FILE EXE DETECTED [FileExecutableDetected]-->
 		<!--EVENT 29: "File Executable Detected"-->
 		<!--COMMENT:	This event is generated when an executable gets written to disk
@@ -2661,6 +2840,12 @@
 			    <Hashes condition="contains">SHA256=55963284bbd5a3297f39f12f0d8a01ed99fe59d008561e3537bcd4db4b4268fa</Hashes>
 			</FileExecutableDetected>
 		</RuleGroup>
+
+		<!--SYSMON EVENT ID 255 : ERROR-->
+			<!--"This event is generated when an error occurred within Sysmon. They can happen if the system is under heavy load
+				and certain tasked could not be performed or a bug exists in the Sysmon service. You can report any bugs on the
+				Sysinternals forum or over Twitter (@markrussinovich)."-->
+			<!--Cannot be filtered.-->
 
 	</EventFiltering>
 </Sysmon>
