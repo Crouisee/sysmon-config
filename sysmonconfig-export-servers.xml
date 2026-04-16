@@ -757,21 +757,6 @@
 		</RegistryEvent>
 	</RuleGroup>
 
-	<!--SYSMON EVENT ID 19 & 20 & 21 : WMI EVENT MONITORING [WmiEvent]-->
-		<!--EVENT 19: "WmiEventFilter activity detected"-->
-		<!--EVENT 20: "WmiEventConsumer activity detected"-->
-		<!--EVENT 21: "WmiEventConsumerToFilter activity detected"-->
-
-		<!--ADDITIONAL REFERENCE: [ https://www.darkoperator.com/blog/2017/10/15/sysinternals-sysmon-610-tracking-of-permanent-wmi-events ] -->
-		<!--ADDITIONAL REFERENCE: [ https://rawsec.lu/blog/posts/2017/Sep/19/sysmon-v610-vs-wmi-persistence/ ] -->
-
-		<!--DATA: EventType, UtcTime, Operation, User, Name, Type, Destination, Consumer, Filter-->
-	<RuleGroup name="" groupRelation="or">
-		<WmiEvent onmatch="exclude">
-			<!--NOTE: Using exclude with no rules means everything will be logged-->
-		</WmiEvent>
-	</RuleGroup>
-
 	<!--SYSMON EVENT ID 22 : DNS QUERY [DnsQuery]-->
 		<!--EVENT 22: "Dns query"-->
 

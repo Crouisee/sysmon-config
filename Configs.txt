@@ -31,7 +31,6 @@ This configuration maintains separate Sysmon monitoring profiles for **servers**
   - Event ID 10: Inter-Process Access
   - Event ID 11: File Created (startup folders only)
   - Event ID 12 & 13 & 14: Registry Modification
-  - Event ID 19 & 20 & 21: WMI Event Monitoring
   - Event ID 22: DNS Query
   - Event ID 255: Error
   - Event ID 29: File Exe Detected
@@ -46,6 +45,5 @@ This configuration maintains separate Sysmon monitoring profiles for **servers**
   - Event ID 10: Inter-Process Access
   - Event ID 11: File Created
   - Event ID 12 & 13 & 14: Registry Modification
-  - Event ID 19 & 20 & 21: WMI Event Monitoring
   - Event ID 255: Error
   - Event ID 29: File Exe Detected
