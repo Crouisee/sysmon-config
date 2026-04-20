@@ -235,6 +235,30 @@
 			<Image condition="begin with">C:\Program Files\Microsoft Monitoring Agent\</Image>
 			<ParentImage condition="is">C:\Program Files\Microsoft Monitoring Agent\MonitoringHost.exe</ParentImage>
 			<ParentImage condition="is">C:\Program Files\Microsoft Monitoring Agent\Agent\HealthService.exe</ParentImage>
+			<!--SECTION: Trend Micro - Noisy AV/EDR agent processes -->
+			<Image condition="begin with">C:\Program Files (x86)\Trend Micro\</Image>
+			<ParentImage condition="begin with">C:\Program Files (x86)\Trend Micro\</ParentImage>
+			<Image condition="begin with">C:\Program Files (x86)\Common Files\VAudio\</Image>
+			<!--SECTION: Windows Defender - Routine AV operations -->
+			<Image condition="begin with">C:\ProgramData\Microsoft\Windows Defender\Platform\</Image>
+			<ParentImage condition="begin with">C:\ProgramData\Microsoft\Windows Defender\Platform\</ParentImage>
+			<!--SECTION: Snow Software - Inventory agent -->
+			<Image condition="begin with">C:\Program Files\Snow Software\</Image>
+			<ParentImage condition="begin with">C:\Program Files\Snow Software\</ParentImage>
+			<!--SECTION: Firefox - Browser child processes -->
+			<ParentImage condition="end with">\Mozilla Firefox\firefox.exe</ParentImage>
+			<Image condition="end with">\Mozilla Firefox\firefox.exe</Image>
+			<!--SECTION: Chrome - Browser child processes -->
+			<ParentImage condition="end with">\Google\Chrome\Application\chrome.exe</ParentImage>
+			<Image condition="end with">\Google\Chrome\Application\chrome.exe</Image>
+			<!--SECTION: Microsoft Edge - Browser child processes -->
+			<ParentImage condition="end with">\Microsoft\Edge\Application\msedge.exe</ParentImage>
+			<Image condition="end with">\Microsoft\Edge\Application\msedge.exe</Image>
+			<!--SECTION: Brave - Browser child processes -->
+			<ParentImage condition="end with">\BraveSoftware\Brave-Browser\Application\brave.exe</ParentImage>
+			<Image condition="end with">\BraveSoftware\Brave-Browser\Application\brave.exe</Image>
+			<!--SECTION: Explorer - Windows shell -->
+			<Image condition="is">C:\Windows\explorer.exe</Image>
 		</ProcessCreate>
 	</RuleGroup>
 
@@ -386,6 +410,22 @@
 			<Image condition="contains">ServiceNow</Image> <!--ServiceNow: Agent and related processes-->
 			<DestinationHostname condition="end with">.service-now.com</DestinationHostname> <!--ServiceNow: Main domain-->
 			<DestinationHostname condition="contains">servicenow</DestinationHostname> <!--ServiceNow: Related domains-->
+			<!--SECTION: Trend Micro - AV/EDR network activity -->
+			<Image condition="begin with">C:\Program Files (x86)\Trend Micro\</Image>
+			<!--SECTION: Windows Defender - AV network activity -->
+			<Image condition="begin with">C:\ProgramData\Microsoft\Windows Defender\Platform\</Image>
+			<!--SECTION: Snow Software - Inventory agent network -->
+			<Image condition="begin with">C:\Program Files\Snow Software\</Image>
+			<!--SECTION: Cisco Secure Client - VPN/Umbrella agent -->
+			<Image condition="begin with">C:\Program Files (x86)\Cisco\Cisco Secure Client\</Image>
+			<!--SECTION: Firefox - Browser network connections (noisy, use proxy logs) -->
+			<Image condition="end with">\Mozilla Firefox\firefox.exe</Image>
+			<!--SECTION: Chrome - Browser network connections (noisy, use proxy logs) -->
+			<Image condition="end with">\Google\Chrome\Application\chrome.exe</Image>
+			<!--SECTION: Microsoft Edge - Browser network connections (noisy, use proxy logs) -->
+			<Image condition="end with">\Microsoft\Edge\Application\msedge.exe</Image>
+			<!--SECTION: Brave - Browser network connections (noisy, use proxy logs) -->
+			<Image condition="end with">\BraveSoftware\Brave-Browser\Application\brave.exe</Image>
 		</NetworkConnect>
 	</RuleGroup>
 
@@ -395,7 +435,24 @@
 		<!--DATA: UtcTime, ProcessGuid, ProcessId, Image-->
 	<RuleGroup name="" groupRelation="or">
 		<ProcessTerminate onmatch="exclude">
-			<!--NOTE: Using exclude with no rules means everything will be logged-->
+			<!--SECTION: Trend Micro - Noisy AV/EDR process exits -->
+			<Image condition="begin with">C:\Program Files (x86)\Trend Micro\</Image>
+			<Image condition="begin with">C:\Program Files (x86)\Common Files\VAudio\</Image>
+			<!--SECTION: Windows Defender - Routine AV process exits -->
+			<Image condition="begin with">C:\ProgramData\Microsoft\Windows Defender\Platform\</Image>
+			<!--SECTION: Snow Software - Inventory agent exits -->
+			<Image condition="begin with">C:\Program Files\Snow Software\</Image>
+			<!--SECTION: Firefox - Browser process exits -->
+			<Image condition="end with">\Mozilla Firefox\firefox.exe</Image>
+			<!--SECTION: Chrome - Browser process exits -->
+			<Image condition="end with">\Google\Chrome\Application\chrome.exe</Image>
+			<!--SECTION: Microsoft Edge - Browser process exits -->
+			<Image condition="end with">\Microsoft\Edge\Application\msedge.exe</Image>
+			<!--SECTION: Brave - Browser process exits -->
+			<Image condition="end with">\BraveSoftware\Brave-Browser\Application\brave.exe</Image>
+			<!--SECTION: Windows noise -->
+			<Image condition="is">C:\Windows\explorer.exe</Image>
+			<Image condition="is">C:\Windows\system32\conhost.exe</Image>
 		</ProcessTerminate>
 	</RuleGroup>
 
@@ -470,6 +527,10 @@
 				<ImageLoaded condition="end with">\msi.dll</ImageLoaded>
 				<Image condition="begin with">C:\Windows\</Image>
 			</Rule>
+			<!--SECTION: Trend Micro - AV/EDR DLL loading noise -->
+			<Image condition="begin with">C:\Program Files (x86)\Trend Micro\</Image>
+			<!--SECTION: Windows Defender - AV DLL loading -->
+			<Image condition="begin with">C:\ProgramData\Microsoft\Windows Defender\Platform\</Image>
 		</ImageLoad>
 	</RuleGroup>
 
@@ -550,6 +611,14 @@
 		<ProcessAccess onmatch="exclude">
 			<SourceImage condition="is">C:\Program Files\Aurora-Agent\aurora-agent.exe</SourceImage>
 			<SourceImage condition="is">C:\Program Files\Aurora-Agent\aurora-agent-64.exe</SourceImage>
+			<!--SECTION: svchost.exe -> lsass.exe - Normal Windows auth/token operations -->
+			<SourceImage condition="is">C:\Windows\system32\svchost.exe</SourceImage>
+			<!--SECTION: Trend Micro - AV scanning lsass and other processes -->
+			<SourceImage condition="begin with">C:\Program Files (x86)\Trend Micro\</SourceImage>
+			<!--SECTION: Windows Defender - AV process access -->
+			<SourceImage condition="begin with">C:\ProgramData\Microsoft\Windows Defender\Platform\</SourceImage>
+			<!--SECTION: Snow Software - Agent process access -->
+			<SourceImage condition="begin with">C:\Program Files\Snow Software\</SourceImage>
 		</ProcessAccess>
 	</RuleGroup>
 
@@ -848,6 +917,19 @@
 			<Image condition="begin with">C:\Program Files\Splunk\bin\</Image>
 			<!-- Windows Installer: routine MSI install/repair cache writes (SYSTEM-run installs already excluded above) -->
 			<TargetObject condition="begin with">HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\UserData\</TargetObject>
+			<!--SECTION: IFEO MitigationOptions - taskhostw constantly rewrites these (Windows exploit protection) -->
+			<TargetObject condition="end with">\MitigationOptions</TargetObject>
+			<TargetObject condition="end with">\MitigationAuditOptions</TargetObject>
+			<!--SECTION: Trend Micro - AV/EDR registry activity -->
+			<Image condition="begin with">C:\Program Files (x86)\Trend Micro\</Image>
+			<Image condition="begin with">C:\Program Files (x86)\Common Files\VAudio\</Image>
+			<TargetObject condition="begin with">HKLM\SOFTWARE\WOW6432Node\TrendMicro\</TargetObject>
+			<TargetObject condition="begin with">HKLM\SOFTWARE\Trendmicro\</TargetObject>
+			<!--SECTION: Windows Defender - AV registry activity -->
+			<Image condition="begin with">C:\ProgramData\Microsoft\Windows Defender\Platform\</Image>
+			<TargetObject condition="begin with">HKLM\SOFTWARE\Microsoft\Windows Defender\Diagnostics\</TargetObject>
+			<!--SECTION: Snow Software - Agent registry activity -->
+			<Image condition="begin with">C:\Program Files\Snow Software\</Image>
 		</RegistryEvent>
 	</RuleGroup>
 
@@ -1193,6 +1275,17 @@
 		</FileDelete>
 	</RuleGroup>
 
+	<RuleGroup name="" groupRelation="or">
+		<FileDelete onmatch="exclude">
+			<!--SECTION: Trend Micro - AV scan engine temp file churn -->
+			<Image condition="begin with">C:\Program Files (x86)\Trend Micro\</Image>
+			<!--SECTION: Windows Defender - AV temp file churn -->
+			<Image condition="begin with">C:\ProgramData\Microsoft\Windows Defender\Platform\</Image>
+			<!--SECTION: Snow Software - Inventory agent file operations -->
+			<Image condition="begin with">C:\Program Files\Snow Software\</Image>
+		</FileDelete>
+	</RuleGroup>
+
 	<!--SYSMON EVENT ID 26 : FILE DELETE DETECTED [FileDeleteDetected]-->
 		<!--EVENT 26: "File Delete detected"-->
 		<!--COMMENT:	Logs deletion attempts of security-relevant files (no archiving). Covers security tool removal and EDR evasion.-->
@@ -1210,6 +1303,19 @@
 			<TargetFilename condition="begin with">C:\Users\Public\</TargetFilename>
 			<TargetFilename condition="begin with">C:\Windows\Temp\</TargetFilename>
 			<TargetFilename condition="begin with">C:\ProgramData\</TargetFilename>
+		</FileDeleteDetected>
+	</RuleGroup>
+
+	<RuleGroup name="" groupRelation="or">
+		<FileDeleteDetected onmatch="exclude">
+			<!--SECTION: Trend Micro - AV scan engine temp file churn -->
+			<Image condition="begin with">C:\Program Files (x86)\Trend Micro\</Image>
+			<!--SECTION: Windows Defender - AV temp file churn -->
+			<Image condition="begin with">C:\ProgramData\Microsoft\Windows Defender\Platform\</Image>
+			<!--SECTION: Snow Software - Inventory agent file operations -->
+			<Image condition="begin with">C:\Program Files\Snow Software\</Image>
+			<!--SECTION: Cisco Secure Client - VPN/Umbrella temp files -->
+			<Image condition="begin with">C:\Program Files (x86)\Cisco\Cisco Secure Client\</Image>
 		</FileDeleteDetected>
 	</RuleGroup>
 

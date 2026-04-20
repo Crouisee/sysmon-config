@@ -95,3 +95,59 @@ Added targeted Sysmon Event ID 7 monitoring to support specific Splunk detection
   - Event ID 26: File Delete Detected
   - Event ID 29: File Exe Detected
   - Event ID 255: Error
+
+### Noise Reduction Exclusions (2026-04-20) — Applied to Both Configs
+
+Data-driven tuning based on analysis of 52,245 sysmon events from endpoint CSV export. Goal: reduce event volume below 10,000/period.
+
+**Trend Micro (all products) — Excluded across EID 1, 3, 5, 7, 10, 12/13, 23, 26:**
+Covers ntrtscan.exe, tmbmsrv.exe, TmListen.exe, TmCpmAdapter.exe, isapiclient.dll, HostedAgent, HostedTelemetry, and VAudio (audckq32.exe, wafbsr32.exe). These processes collectively generated ~15,000+ events. Exclusions use broad `begin with` path matching on:
+- `C:\Program Files (x86)\Trend Micro\`
+- `C:\Program Files (x86)\Common Files\VAudio\`
+- Registry keys: `HKLM\SOFTWARE\WOW6432Node\TrendMicro\`, `HKLM\SOFTWARE\Trendmicro\`
+
+Note: EID 4 (Sysmon Service State Changed) is NOT filtered — service shutdown events are still logged.
+
+**Windows Defender (MsMpEng.exe) — Excluded across EID 1, 3, 5, 7, 10, 12/13, 23, 26:**
+Routine AV operations generated ~1,000+ registry writes and process events. Exclusions use `begin with` on:
+- `C:\ProgramData\Microsoft\Windows Defender\Platform\`
+- Registry key: `HKLM\SOFTWARE\Microsoft\Windows Defender\Diagnostics\`
+
+Note: Defender tamper detection rules in EID 12/13 INCLUDE section are preserved (Exclusions key changes, policy changes, disablement detection). The EDR-Freeze detection rule (WerFaultSecure→MsMpEng) in EID 10 INCLUDE is also preserved.
+
+**Snow Software (snowagent.exe) — Excluded across EID 1, 3, 5, 10, 12/13, 23, 26:**
+Inventory agent generated ~600+ file delete and process events. Exclusion path: `C:\Program Files\Snow Software\`
+
+**Firefox — Excluded from EID 1, 3, 5:**
+Browser generated ~7,400 network events (89% of EID 3), ~850 process creates, ~850 terminations. Network connections should be monitored via proxy/DNS logs instead. Path: `\Mozilla Firefox\firefox.exe`
+
+**Chrome — Excluded from EID 1, 3, 5:**
+Same rationale as Firefox. Browser child processes, network connections, and process exits excluded. Path: `\Google\Chrome\Application\chrome.exe`
+
+**Microsoft Edge — Excluded from EID 1, 3, 5:**
+Same rationale as Firefox. Path: `\Microsoft\Edge\Application\msedge.exe`
+
+**Brave — Excluded from EID 1, 3, 5:**
+Same rationale as Firefox. Path: `\BraveSoftware\Brave-Browser\Application\brave.exe`
+
+**Explorer (Windows shell) — Excluded from EID 1, 5:**
+Windows Explorer process creation and termination events are routine shell noise. Path: `C:\Windows\explorer.exe`
+
+**Cisco Secure Client — Excluded from EID 26:**
+VPN/Umbrella agent generated ~305 file delete events. Path: `C:\Program Files (x86)\Cisco\Cisco Secure Client\`
+
+**IFEO MitigationOptions/MitigationAuditOptions — Excluded from EID 12/13:**
+taskhostw.exe constantly rewrites Windows exploit protection mitigation settings under `Image File Execution Options\*`. ~9,200 events (80% of EID 13). Excluded by `end with` on `\MitigationOptions` and `\MitigationAuditOptions`.
+
+**svchost.exe → lsass.exe — Excluded from EID 10:**
+Normal Windows authentication/token operations. 3,714 events (63% of EID 10).
+
+**conhost.exe — Excluded from EID 5:**
+Console host terminations are pure noise. 897 events. (Already excluded from EID 1 in base config.)
+
+**Estimated impact:** ~52,245 → ~8,000-10,000 events (80-85% reduction)
+
+**Detection coverage preserved:**
+- All INCLUDE rules unchanged (persistence, credential theft, LSASS access with suspicious permissions, COM hijack, IFEO debugger, Defender tampering, ransomware file deletion, CobaltStrike BOF patterns, EDR-Freeze, etc.)
+- EID 4 (service state) unfiltered — still logs Sysmon/Defender service stops
+- Defender registry tamper rules in EID 12/13 include section untouched
