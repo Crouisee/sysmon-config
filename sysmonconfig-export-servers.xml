@@ -245,6 +245,20 @@
 			<!--SECTION: Snow Software - Inventory agent -->
 			<Image condition="begin with">C:\Program Files\Snow Software\</Image>
 			<ParentImage condition="begin with">C:\Program Files\Snow Software\</ParentImage>
+			<!--SECTION: SCCM/ConfigMgr - Microsoft endpoint management agent -->
+			<Image condition="begin with">C:\Windows\CCM\</Image>
+			<ParentImage condition="begin with">C:\Windows\CCM\</ParentImage>
+			<Image condition="begin with">C:\Windows\ccmsetup\</Image>
+			<!--SECTION: ManageEngine Endpoint Central - Endpoint management agent -->
+			<Image condition="begin with">C:\Program Files (x86)\DesktopCentral_Agent\</Image>
+			<ParentImage condition="begin with">C:\Program Files (x86)\DesktopCentral_Agent\</ParentImage>
+			<Image condition="begin with">C:\Program Files (x86)\ManageEngine\UEMS_Agent\</Image>
+			<ParentImage condition="begin with">C:\Program Files (x86)\ManageEngine\UEMS_Agent\</ParentImage>
+			<!--SECTION: Tenable Nessus Agent - Vulnerability scanner -->
+			<Image condition="begin with">C:\Program Files\Tenable\Nessus Agent\</Image>
+			<!--SECTION: Veeam - Backup agent -->
+			<Image condition="begin with">C:\Program Files\Veeam\</Image>
+			<ParentImage condition="begin with">C:\Program Files\Veeam\</ParentImage>
 			<!--SECTION: Firefox - Browser child processes -->
 			<ParentImage condition="end with">\Mozilla Firefox\firefox.exe</ParentImage>
 			<Image condition="end with">\Mozilla Firefox\firefox.exe</Image>
@@ -257,12 +271,24 @@
 			<!--SECTION: Brave - Browser child processes -->
 			<ParentImage condition="end with">\BraveSoftware\Brave-Browser\Application\brave.exe</ParentImage>
 			<Image condition="end with">\BraveSoftware\Brave-Browser\Application\brave.exe</Image>
+			<!--SECTION: EdgeWebView2 - Embedded browser runtime (Outlook, VS Code, Teams) -->
+			<Image condition="end with">\msedgewebview2.exe</Image>
+			<ParentImage condition="end with">\msedgewebview2.exe</ParentImage>
+			<!--SECTION: Google Updater - Routine self-update process churn -->
+			<Image condition="begin with">C:\Program Files\Google\GoogleUpdater\</Image>
+			<Image condition="begin with">C:\Program Files (x86)\Google\GoogleUpdater\</Image>
+			<ParentImage condition="begin with">C:\Program Files\Google\GoogleUpdater\</ParentImage>
+			<ParentImage condition="begin with">C:\Program Files (x86)\Google\GoogleUpdater\</ParentImage>
+			<!--SECTION: MDM Agents - Windows Intune/OMA-DM enrollment (any MDM-managed device) -->
+			<Image condition="image">deviceenroller.exe</Image>
+			<Image condition="image">omadmclient.exe</Image>
 			<!--SECTION: Explorer - Windows shell -->
 			<Image condition="is">C:\Windows\explorer.exe</Image>
 		</ProcessCreate>
 	</RuleGroup>
 
 	<!--SYSMON EVENT ID 3 : NETWORK CONNECTION INITIATED [NetworkConnect]-->
+		<!--EVENT 3: "Network connection detected"-->
 		<!--COMMENT:	By default this configuration takes a very conservative approach to network logging, limited to only extremely high-signal events.-->
 		<!--COMMENT:	[ https://attack.mitre.org/wiki/Command_and_Control ] [ https://attack.mitre.org/wiki/Exfiltration ] [ https://attack.mitre.org/wiki/Lateral_Movement ] -->
 		<!--TECHNICAL:	For the DestinationHostname, Sysmon uses the GetNameInfo API, which will often not have any information, and may just be a CDN. This is NOT reliable for filtering.-->
@@ -442,6 +468,16 @@
 			<Image condition="begin with">C:\ProgramData\Microsoft\Windows Defender\Platform\</Image>
 			<!--SECTION: Snow Software - Inventory agent exits -->
 			<Image condition="begin with">C:\Program Files\Snow Software\</Image>
+			<!--SECTION: SCCM/ConfigMgr - Endpoint management process exits -->
+			<Image condition="begin with">C:\Windows\CCM\</Image>
+			<Image condition="begin with">C:\Windows\ccmsetup\</Image>
+			<!--SECTION: ManageEngine Endpoint Central - Agent process exits -->
+			<Image condition="begin with">C:\Program Files (x86)\DesktopCentral_Agent\</Image>
+			<Image condition="begin with">C:\Program Files (x86)\ManageEngine\UEMS_Agent\</Image>
+			<!--SECTION: Tenable Nessus Agent - Vulnerability scanner process exits -->
+			<Image condition="begin with">C:\Program Files\Tenable\Nessus Agent\</Image>
+			<!--SECTION: Veeam - Backup agent process exits -->
+			<Image condition="begin with">C:\Program Files\Veeam\</Image>
 			<!--SECTION: Firefox - Browser process exits -->
 			<Image condition="end with">\Mozilla Firefox\firefox.exe</Image>
 			<!--SECTION: Chrome - Browser process exits -->
@@ -450,6 +486,14 @@
 			<Image condition="end with">\Microsoft\Edge\Application\msedge.exe</Image>
 			<!--SECTION: Brave - Browser process exits -->
 			<Image condition="end with">\BraveSoftware\Brave-Browser\Application\brave.exe</Image>
+			<!--SECTION: EdgeWebView2 - Embedded browser runtime exits -->
+			<Image condition="end with">\msedgewebview2.exe</Image>
+			<!--SECTION: Google Updater - Routine update process exits -->
+			<Image condition="begin with">C:\Program Files\Google\GoogleUpdater\</Image>
+			<Image condition="begin with">C:\Program Files (x86)\Google\GoogleUpdater\</Image>
+			<!--SECTION: mscorsvw - .NET Native Image Service background optimization -->
+			<Image condition="begin with">C:\Windows\Microsoft.NET\Framework64\v4.0.30319\mscorsvw.exe</Image>
+			<Image condition="begin with">C:\Windows\Microsoft.NET\Framework\v4.0.30319\mscorsvw.exe</Image>
 			<!--SECTION: Windows noise -->
 			<Image condition="is">C:\Windows\explorer.exe</Image>
 			<Image condition="is">C:\Windows\system32\conhost.exe</Image>
@@ -457,6 +501,7 @@
 	</RuleGroup>
 
 	<!--SYSMON EVENT ID 6 : DRIVER LOADED INTO KERNEL [DriverLoad]-->
+		<!--EVENT 6: "Driver loaded"-->
 		<!--COMMENT:	Because drivers with bugs can be used to escalate to kernel permissions, be extremely selective
 			about what you exclude from monitoring. Low event volume, little incentive to exclude.
 			[ https://attack.mitre.org/wiki/Technique/T1014 ] -->
@@ -531,6 +576,14 @@
 			<Image condition="begin with">C:\Program Files (x86)\Trend Micro\</Image>
 			<!--SECTION: Windows Defender - AV DLL loading -->
 			<Image condition="begin with">C:\ProgramData\Microsoft\Windows Defender\Platform\</Image>
+			<!--SECTION: Google Updater - Routine DLL loads during self-update (high volume, low signal) -->
+			<Image condition="begin with">C:\Program Files\Google\GoogleUpdater\</Image>
+			<Image condition="begin with">C:\Program Files (x86)\Google\GoogleUpdater\</Image>
+			<!--SECTION: SCCM/ConfigMgr - Routine DLL loads by management agent -->
+			<Image condition="begin with">C:\Windows\CCM\</Image>
+			<!--SECTION: ManageEngine Endpoint Central - Routine DLL loads by management agent -->
+			<Image condition="begin with">C:\Program Files (x86)\DesktopCentral_Agent\</Image>
+			<Image condition="begin with">C:\Program Files (x86)\ManageEngine\UEMS_Agent\</Image>
 		</ImageLoad>
 	</RuleGroup>
 
@@ -619,6 +672,18 @@
 			<SourceImage condition="begin with">C:\ProgramData\Microsoft\Windows Defender\Platform\</SourceImage>
 			<!--SECTION: Snow Software - Agent process access -->
 			<SourceImage condition="begin with">C:\Program Files\Snow Software\</SourceImage>
+			<!--SECTION: SCCM/ConfigMgr - Management agent process access -->
+			<SourceImage condition="begin with">C:\Windows\CCM\</SourceImage>
+			<!--SECTION: Outlook opening EdgeWebView2 - Normal embedded browser rendering in Outlook -->
+			<Rule groupRelation="and">
+				<SourceImage condition="end with">\OUTLOOK.EXE</SourceImage>
+				<TargetImage condition="end with">\msedgewebview2.exe</TargetImage>
+			</Rule>
+			<!--SECTION: Intune Agent - Routine management spawning of AgentExecutor -->
+			<Rule groupRelation="and">
+				<SourceImage condition="end with">\Microsoft.Management.Services.IntuneWindowsAgent.exe</SourceImage>
+				<TargetImage condition="end with">\agentexecutor.exe</TargetImage>
+			</Rule>
 		</ProcessAccess>
 	</RuleGroup>
 
@@ -631,6 +696,24 @@
 		<FileCreate onmatch="include">
 			<TargetFilename name="T1165" condition="contains">\Startup\</TargetFilename> <!--Windows: Startup folder modifications-->
 			<TargetFilename name="T1023" condition="contains">\Start Menu</TargetFilename> <!--Windows: Startup links and shortcut modification-->
+		</FileCreate>
+	</RuleGroup>
+
+	<RuleGroup name="" groupRelation="or">
+		<FileCreate onmatch="exclude">
+			<!--SECTION: Known-Good Applications - AppData/Temp Exclusions (EVENT 11 Tuning - Change #3)-->
+			<!--Note: Servers have limited FILE CREATION monitoring (startup folders only), but add exclusions to reduce noise from system processes-->
+			<TargetFilename condition="contains">\AppData\Local\Temp\</TargetFilename> <!--General: User temp folder-->
+			<TargetFilename condition="contains">\AppData\Local\Microsoft\Windows\Temporary Internet Files\</TargetFilename> <!--IE: Cache folder-->
+			<TargetFilename condition="begin with">C:\ProgramData\Microsoft\Windows Defender Advanced Threat Protection\DataCollection</TargetFilename> <!--Microsoft: AETP datacollection (system telemetry)-->
+			<Image condition="image">MsSense.exe</Image> <!--Microsoft: MDE sensor writing to DataCollection path (generic: any MDE deployment)-->
+			<TargetFilename condition="begin with">C:\Program Files\WindowsApps\</TargetFilename> <!--Microsoft: Store apps auto-updates-->
+			<!--SECTION: SCCM/ConfigMgr - Software deployment cache and client temp files -->
+			<TargetFilename condition="begin with">C:\Windows\ccmcache\</TargetFilename>
+			<TargetFilename condition="begin with">C:\Windows\ccmsetup\</TargetFilename>
+			<TargetFilename condition="begin with">C:\Windows\CCM\Logs\</TargetFilename>
+			<!--SECTION: Veeam - Backup agent working files -->
+			<TargetFilename condition="begin with">C:\ProgramData\Veeam\</TargetFilename>
 		</FileCreate>
 	</RuleGroup>
 
@@ -930,6 +1013,21 @@
 			<TargetObject condition="begin with">HKLM\SOFTWARE\Microsoft\Windows Defender\Diagnostics\</TargetObject>
 			<!--SECTION: Snow Software - Agent registry activity -->
 			<Image condition="begin with">C:\Program Files\Snow Software\</Image>
+			<!--SECTION: SCCM/ConfigMgr - Routine client registry writes -->
+			<Image condition="begin with">C:\Windows\CCM\</Image>
+			<TargetObject condition="begin with">HKLM\SOFTWARE\Microsoft\CCM\</TargetObject>
+			<TargetObject condition="begin with">HKLM\SOFTWARE\Microsoft\SMS\</TargetObject>
+			<!--SECTION: ManageEngine Endpoint Central - Agent registry writes -->
+			<Image condition="begin with">C:\Program Files (x86)\DesktopCentral_Agent\</Image>
+			<Image condition="begin with">C:\Program Files (x86)\ManageEngine\UEMS_Agent\</Image>
+			<!--SECTION: MDM Agents - deviceenroller and omadmclient (Intune/OMA-DM, any MDM-managed device) -->
+			<Image condition="image">deviceenroller.exe</Image>
+			<Image condition="image">omadmclient.exe</Image>
+			<!--SECTION: WMIADAP - WMI Performance Counter Adapter (fires every ~15min, writes to Wbem key) -->
+			<Rule groupRelation="and">
+				<Image condition="image">WMIADAP.EXE</Image>
+				<TargetObject condition="begin with">HKLM\SOFTWARE\Microsoft\Wbem\</TargetObject>
+			</Rule>
 		</RegistryEvent>
 	</RuleGroup>
 

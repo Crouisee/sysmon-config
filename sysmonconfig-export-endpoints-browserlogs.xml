@@ -194,8 +194,6 @@
 			<ParentCommandLine condition="is">C:\Windows\system32\svchost.exe -k netsvcs</ParentCommandLine> <!--Windows: Network services: Spawns Consent.exe-->
 			<ParentCommandLine condition="is">C:\Windows\system32\svchost.exe -k localSystemNetworkRestricted</ParentCommandLine> <!--Windows-->
 			<CommandLine condition="is">C:\Windows\system32\deviceenroller.exe /c /AutoEnrollMDM</CommandLine> <!--Windows: AzureAD device enrollment agent-->
-			<!--SECTION: Microsoft:Edge-->
-			<CommandLine condition="begin with">"C:\Program Files (x86)\Microsoft\Edge Dev\Application\msedge.exe" --type=</CommandLine>
 			<!--SECTION: Microsoft:dotNet-->
 			<CommandLine condition="begin with">C:\Windows\Microsoft.NET\Framework\v4.0.30319\ngen.exe</CommandLine> <!--Microsoft:DotNet-->
 			<CommandLine condition="begin with">C:\WINDOWS\Microsoft.NET\Framework64\v4.0.30319\Ngen.exe</CommandLine> <!--Microsoft:DotNet-->
@@ -221,9 +219,6 @@
 			<ParentImage condition="is">C:\Program Files\Common Files\Microsoft Shared\ClickToRun\OfficeC2RClient.exe</ParentImage> <!--Microsoft:Office: Background process-->
 			<!--SECTION: Windows: Media player-->
 			<Image condition="is">C:\Program Files\Windows Media Player\wmpnscfg.exe</Image> <!--Windows: Windows Media Player Network Sharing Service Configuration Application-->
-			<!--SECTION: Google-->
-			<CommandLine condition="begin with">"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe" --type=</CommandLine> <!--Google:Chrome: massive command-line arguments-->
-			<CommandLine condition="begin with">"C:\Program Files\Google\Chrome\Application\chrome.exe" --type=</CommandLine> <!--Google:Chrome: massive command-line arguments-->
 			<!--SECTION: Splunk-->
 			<Image condition="contains">:\Program Files\Splunk\bin\</Image> <!--Splunk: Very noisy if using Universal Forwarders-->
 			<ParentImage condition="end with">:\Program Files\Splunk\bin\splunkd.exe</ParentImage> <!--Splunk: Very noisy if using Universal Forwarders-->
@@ -259,18 +254,6 @@
 			<!--SECTION: Veeam - Backup agent -->
 			<Image condition="begin with">C:\Program Files\Veeam\</Image>
 			<ParentImage condition="begin with">C:\Program Files\Veeam\</ParentImage>
-			<!--SECTION: Firefox - Browser child processes -->
-			<ParentImage condition="end with">\Mozilla Firefox\firefox.exe</ParentImage>
-			<Image condition="end with">\Mozilla Firefox\firefox.exe</Image>
-			<!--SECTION: Chrome - Browser child processes -->
-			<ParentImage condition="end with">\Google\Chrome\Application\chrome.exe</ParentImage>
-			<Image condition="end with">\Google\Chrome\Application\chrome.exe</Image>
-			<!--SECTION: Microsoft Edge - Browser child processes -->
-			<ParentImage condition="end with">\Microsoft\Edge\Application\msedge.exe</ParentImage>
-			<Image condition="end with">\Microsoft\Edge\Application\msedge.exe</Image>
-			<!--SECTION: Brave - Browser child processes -->
-			<ParentImage condition="end with">\BraveSoftware\Brave-Browser\Application\brave.exe</ParentImage>
-			<Image condition="end with">\BraveSoftware\Brave-Browser\Application\brave.exe</Image>
 			<!--SECTION: EdgeWebView2 - Embedded browser runtime (Outlook, VS Code, Teams) -->
 			<Image condition="end with">\msedgewebview2.exe</Image>
 			<ParentImage condition="end with">\msedgewebview2.exe</ParentImage>
@@ -443,14 +426,6 @@
 			<Image condition="begin with">C:\Program Files\Snow Software\</Image>
 			<!--SECTION: Cisco Secure Client - VPN/Umbrella agent -->
 			<Image condition="begin with">C:\Program Files (x86)\Cisco\Cisco Secure Client\</Image>
-			<!--SECTION: Firefox - Browser network connections (noisy, use proxy logs) -->
-			<Image condition="end with">\Mozilla Firefox\firefox.exe</Image>
-			<!--SECTION: Chrome - Browser network connections (noisy, use proxy logs) -->
-			<Image condition="end with">\Google\Chrome\Application\chrome.exe</Image>
-			<!--SECTION: Microsoft Edge - Browser network connections (noisy, use proxy logs) -->
-			<Image condition="end with">\Microsoft\Edge\Application\msedge.exe</Image>
-			<!--SECTION: Brave - Browser network connections (noisy, use proxy logs) -->
-			<Image condition="end with">\BraveSoftware\Brave-Browser\Application\brave.exe</Image>
 		</NetworkConnect>
 	</RuleGroup>
 
@@ -482,14 +457,6 @@
 			<Image condition="begin with">C:\Program Files\Tenable\Nessus Agent\</Image>
 			<!--SECTION: Veeam - Backup agent process exits -->
 			<Image condition="begin with">C:\Program Files\Veeam\</Image>
-			<!--SECTION: Firefox - Browser process exits -->
-			<Image condition="end with">\Mozilla Firefox\firefox.exe</Image>
-			<!--SECTION: Chrome - Browser process exits -->
-			<Image condition="end with">\Google\Chrome\Application\chrome.exe</Image>
-			<!--SECTION: Microsoft Edge - Browser process exits -->
-			<Image condition="end with">\Microsoft\Edge\Application\msedge.exe</Image>
-			<!--SECTION: Brave - Browser process exits -->
-			<Image condition="end with">\BraveSoftware\Brave-Browser\Application\brave.exe</Image>
 			<!--SECTION: EdgeWebView2 - Embedded browser runtime exits -->
 			<Image condition="end with">\msedgewebview2.exe</Image>
 			<!--SECTION: Google Updater - Routine update process exits -->
@@ -602,7 +569,6 @@
 			<SourceImage condition="is">C:\Windows\system32\winlogon.exe</SourceImage>
 			<SourceImage condition="is">C:\Windows\system32\audiodg.exe</SourceImage>
 			<StartModule condition="is">C:\Windows\system32\kernel32.dll</StartModule>
-			<TargetImage condition="is">C:\Program Files (x86)\Google\Chrome\Application\chrome.exe</TargetImage>
 		</CreateRemoteThread>
 	</RuleGroup>
 
@@ -804,7 +770,6 @@
 			<!--SECTION: Known-Good Applications - AppData/Temp Exclusions (EVENT 11 Tuning - Change #3)-->
 			<TargetFilename condition="contains">\AppData\Local\Temp\</TargetFilename> <!--General: User temp folder - noisy but monitored by MFA/AV-->
 			<TargetFilename condition="contains">\AppData\Local\Microsoft\Windows\Temporary Internet Files\</TargetFilename> <!--IE: Cache folder-->
-			<TargetFilename condition="contains">\AppData\Local\Microsoft\EdgeWebView</TargetFilename> <!--Microsoft: Edge WebView - 193 events in baseline (non-critical)-->
 			<TargetFilename condition="contains">\AppData\Local\Programs\Microsoft Visual Studio Code\</TargetFilename> <!--VS Code: Updates and temp files-->
 			<TargetFilename condition="contains">\AppData\Local\Microsoft\OneDrive\</TargetFilename> <!--Microsoft: OneDrive caching (already monitored by Microsoft)-->
 			<TargetFilename condition="contains">\AppData\LocalLow\</TargetFilename> <!--General: Low-integrity temp storage - non-executable-->
@@ -1092,10 +1057,6 @@
 			<!-- SECTION: Load reduction - High-volume trusted writers -->
 			<!-- Windows Update / TrustedInstaller: modifies hundreds of keys during patching -->
 			<Image condition="is">C:\Windows\servicing\TrustedInstaller.exe</Image>
-			<!-- Browser updater processes: routine self-update registry churn -->
-			<Image condition="begin with">C:\Program Files\Google\Update\</Image>
-			<Image condition="begin with">C:\Program Files (x86)\Google\Update\</Image>
-			<Image condition="begin with">C:\Program Files (x86)\Microsoft\EdgeUpdate\</Image>
 			<!-- Windows Font Cache: routine rendering key writes -->
 			<TargetObject condition="begin with">HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\FontCache</TargetObject>
 			<!-- Management agents: known-good, high-frequency registry writers -->
